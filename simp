@@ -1,0 +1,154 @@
+import sys
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
+from PyQt6.QtWidgets import QApplication, QWidget
+symptoms = ['головная боль', 'тошнота', 'кашель', 'насморк', 'боль в горле', 'повышенная температура', 'озноб', 'мышечные боли', 'слабость', 'потеря аппетита', 'тошнота и рвота', 'диарея', 'сыпь', 'зуд', 'затрудненное дыхание', 'боль в груди', 'спутанность сознания', 'судороги']
+medications = {
+    'головная боль': ['ибупрофен', 'аспирин', 'парацетамол'],
+    'тошнота': ['метоклопрамид', 'ондансетрон'],
+    'кашель': ['декстрометорфан', 'гвайфенезин'],
+    'насморк': ['псевдоэфедрин', 'фенилэфрин'],
+    'боль в горле': ['бензокаин', 'лидокаин'],
+    'повышенная температура': ['ибупрофен', 'ацетаминофен', 'парацетамол'],
+    'озноб': ['ибупрофен', 'ацетаминофен', 'парацетамол'],
+    'мышечные боли': ['ибупрофен', 'ацетаминофен', 'парацетамол'],
+    'слабость': ['отдых', 'обильное питье'],
+    'потеря аппетита': ['отдых', 'обильное питье'],
+    'тошнота и рвота': ['метоклопрамид', 'ондансетрон'],
+    'диарея': ['лоперамид', 'смекта'],
+    'сыпь': ['антигистаминные препараты'],
+    'зуд': ['антигистаминные препараты'],
+    'затрудненное дыхание': ['ингаляторы', 'небулайзеры'],
+    'боль в груди': ['нитроглицерин'],
+    'спутанность сознания': ['вызвать скорую помощь'],
+    'судороги': ['вызвать скорую помощь']
+}
+recommendations = {
+    'слабость': 'Отдыхайте и пейте много жидкости.',
+    'потеря аппетита': 'Отдыхайте и пейте много жидкости.',
+    'тошнота и рвота': 'Ешьте маленькими порциями и пейте много жидкости.',
+    'диарея': 'Пейте много жидкости и принимайте противодиарейные препараты.',
+    'сыпь': 'Принимайте антигистаминные препараты и избегайте контакта с аллергенами.',
+    'зуд': 'Принимайте антигистаминные препараты и избегайте расчесывания пораженных участков кожи.',
+    'затрудненное дыхание': 'Используйте ингаляторы или небулайзеры и обратитесь к врачу, если симптомы не улучшатся.',
+    'боль в груди': 'Примите нитроглицерин и обратитесь к врачу, если симптомы не улучшатся.',
+    'спутанность сознания': 'Вызовите скорую помощь немедленно.',
+    'судороги': 'Вызовите скорую помощь немедленно.'
+}
+
+class SymptomChecker(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        # Установка стиля для приложения
+        app = QApplication(sys.argv)
+        widget = QWidget()  # Создаем объект QWidget
+        app.setStyle('Fusion')
+
+        # Установка шрифта для всех виджетов
+        font = QFont('Arial', 12)
+        app.setFont(font)
+
+        # Установка цвета фона для окна приложения
+        palette = app.palette()
+        palette.setColor(QPalette.Window, QColor(230, 230, 230))
+        app.setPalette(palette)
+
+        # Установка цвета фона для виджетов
+        palette = QPalette()
+        palette.setColor(QPalette.Base, QColor(240, 240, 240))
+        for widget in self.findChildren(QWidget):
+            widget.setPalette(palette)
+
+        # Установка стиля для кнопок
+        for button in self.findChildren(QPushButton):
+            button.setStyleSheet('background-color: #40739e; color: white; border-radius: 5px; padding: 5px 10px;')
+
+        # Установка стиля для раскрывающегося списка
+        self.dropdown.setStyleSheet('background-color: #ffffff; color: black; border: 1px solid #cccccc; border-radius: 5px; padding: 5px 10px;')
+
+        # Установка стиля для списков
+        for list_widget in [self.medication_list, self.recommendation_list]:
+            list_widget.setStyleSheet('background-color: #ffffff; color: black; border: 1px solid #cccccc; border-radius: 5px; padding: 5px 10px;')
+
+        self.setWindowTitle('Symptom Checker')
+        self.resize(600, 400)
+
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+
+        self.layout = QGridLayout()
+        self.central_widget.setLayout(self.layout)
+
+        # Описание программы
+        self.description_label = QLabel('Эта программа поможет вам проверить симптомы и получить рекомендации по лечению.')
+        self.layout.addWidget(self.description_label, 0, 0, 1, 2)
+
+        # Раскрывающийся список для выбора симптомов
+        self.dropdown_label = QLabel('Выберите симптомы:')
+        self.layout.addWidget(self.dropdown_label, 1, 0)
+
+        self.dropdown = QComboBox()
+        self.dropdown.addItems(symptoms['symptom'])
+        self.layout.addWidget(self.dropdown, 1, 1)
+
+        # Поле ввода для дополнительных симптомов
+        self.symptom_input_label = QLabel('Введите дополнительные симптомы (через запятую):')
+        self.layout.addWidget(self.symptom_input_label, 2, 0)
+
+        self.symptom_input = QLineEdit()
+        self.layout.addWidget(self.symptom_input, 2, 1)
+
+        # Кнопка для проверки симптомов
+        self.check_button = QPushButton('Проверить симптомы')
+        self.check_button.clicked.connect(self.check_symptoms)
+        self.layout.addWidget(self.check_button, 3, 0, 1, 2)
+
+        # Список лекарств
+        self.medication_label = QLabel('Лекарства:')
+        self.layout.addWidget(self.medication_label, 4, 0)
+
+        self.medication_list = QListWidget()
+        self.layout.addWidget(self.medication_list, 5, 0)
+
+        # Список рекомендаций
+        self.recommendation_label = QLabel('Рекомендации:')
+        self.layout.addWidget(self.recommendation_label, 4, 1)
+
+        self.recommendation_list = QListWidget()
+        self.layout.addWidget(self.recommendation_list, 5, 1)
+
+    def check_symptoms(self):
+        # Получить выбранные симптомы
+        selected_symptoms = [self.dropdown.currentText()]
+        additional_symptoms = self.symptom_input.text().split(',')
+        selected_symptoms.extend(additional_symptoms)
+
+        # Получить список лекарств для выбранных симптомов
+        medications_list = []
+        for symptom in selected_symptoms:
+            if symptom in medications:
+                medications_list.extend(medications[symptom])
+
+        # Удалить дубликаты из списка лекарств
+        medications_list = list(set(medications_list))
+
+        # Получить рекомендации для выбранных симптомов
+        recommendations_list = []
+        for symptom in selected_symptoms:
+            if symptom in recommendations:
+                recommendations_list.append(recommendations[symptom])
+
+        # Отобразить список лекарств и рекомендаций в списках
+        self.medication_list.clear()
+        self.medication_list.addItems(medications_list)
+
+        self.recommendation_list.clear()
+        self.recommendation_list.addItems(recommendations_list)
+
+
+if __name__ == '__main__':
+    symptom_checker = SymptomChecker()
+    symptom_checker.show()
+    sys.exit(app.exec())
